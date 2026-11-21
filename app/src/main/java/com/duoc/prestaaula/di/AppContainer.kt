@@ -1,0 +1,35 @@
+package com.duoc.prestaaula.di
+
+import android.content.Context
+import com.duoc.prestaaula.data.local.PrestaAulaDatabase
+import com.duoc.prestaaula.data.repository.AdminRepository
+import com.duoc.prestaaula.data.repository.AvailabilityRepository
+import com.duoc.prestaaula.data.repository.EquipmentRepository
+import com.duoc.prestaaula.data.repository.LoanRepository
+import com.duoc.prestaaula.data.repository.UsageRepository
+import com.duoc.prestaaula.data.repository.UserRepository
+import com.duoc.prestaaula.data.seed.SeedData
+import com.duoc.prestaaula.data.session.SessionManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+
+/** Contenedor de dependencias manual (sin librerías de inyección). */
+class AppContainer(context: Context) {
+    private val appContext = context.applicationContext
+    private val database = PrestaAulaDatabase.getInstance(appContext)
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    val sessionManager = SessionManager(appContext)
+    val userRepository = UserRepository(database.userDao())
+    val equipmentRepository = EquipmentRepository(database)
+    val loanRepository = LoanRepository(database, database.loanDao(), database.equipmentDao())
+    val availabilityRepository = AvailabilityRepository(database.availabilityDao())
+    val adminRepository = AdminRepository(database)
+    val usageRepository = UsageRepository(database)
+
+    fun seedIfEmpty() {
+        appScope.launch { SeedData.insertIfEmpty(database) }
+    }
+}
